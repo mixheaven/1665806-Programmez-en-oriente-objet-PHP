@@ -11,7 +11,7 @@
 
 declare(strict_types=1);
 
-class Lobby
+final class Lobby
 {
     /** @var array<QueuingPlayer> */
     public array $queuingPlayers = [];
@@ -40,24 +40,34 @@ class Lobby
         }
     }
 }
-
-class Player
-{
-    public function __construct(protected string $name, protected float $ratio = 400.0)
+abstract class AbstractPlayer {
+    public function __construct(public string $name = 'anonymous', public float $ratio = 400.0)
     {
     }
+
+    abstract protected function getName(): string;
+    abstract protected function getRatio(): float;
+    abstract protected function probabilityAgainst(AbstractPlayer $player): float;
+    abstract public function updateRatioAgainst(AbstractPlayer $player, int $result): void;
+}
+
+
+
+class Player extends AbstractPlayer
+{
+    
 
     public function getName(): string
     {
         return $this->name;
     }
 
-    protected function probabilityAgainst(self $player): float
+    protected function probabilityAgainst(AbstractPlayer $player): float
     {
         return 1 / (1 + (10 ** (($player->getRatio() - $this->getRatio()) / 400)));
     }
 
-    public function updateRatioAgainst(self $player, int $result): void
+    public function updateRatioAgainst(AbstractPlayer $player, int $result): void
     {
         $this->ratio += 32 * ($result - $this->probabilityAgainst($player));
     }
@@ -67,7 +77,6 @@ class Player
         return $this->ratio;
     }
 }
-
 class QueuingPlayer extends Player
 {
     public function __construct(Player $player, protected int $range = 1)
@@ -86,8 +95,8 @@ class QueuingPlayer extends Player
     }
 }
 
-$greg = new Player('greg');
-$jade = new Player('jade');
+$greg = new Player('greg', 400);
+$jade = new Player('jade', 476);
 
 $lobby = new Lobby();
 $lobby->addPlayers($greg, $jade);
